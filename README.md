@@ -5,5 +5,5 @@
 * [著者サポートページ](http://hosho.ees.hokudai.ac.jp/~kubo/ce/IwanamiBook.html)
 
 ## 目次
-* [1章](Chap01.html)
-* [2章](Chap02.html)
+* [1章](/Chap01.html)
+* [2章](/Chap02.html)
