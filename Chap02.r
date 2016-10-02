@@ -3,6 +3,8 @@ date()
 
 sapply(c("pipeR", "ggplot2", "dplyr", "tidyr", "readr"), require, character.only = TRUE)
 
+options(repr.plot.width = 4, repr.plot.height = 4)
+
 dir(".", full.names = TRUE) %>>% cat(sep = "\n")
 
 dir("./data", full.names = TRUE, recursive = TRUE) %>>% cat(sep = "\n")
@@ -20,8 +22,6 @@ length(data)
 summary(data)
 
 table(data)
-
-options(repr.plot.width = 4, repr.plot.height = 4)
 
 data_frame(data = data) %>>% 
     ggplot(aes(x = data)) + 
@@ -114,6 +114,17 @@ data_frame(lambda, logL = sapply(lambda, logL)) %>>%
         geom_vline(xintercept = 3.56, linetype = 2) + 
         scale_x_continuous(breaks = seq(2, 5, 0.5))
 
+binom.test(4, 10)
+
+logL <- function(t){
+    4 * log(t) + 6 * log(1 - t)
+}
+ggplot(data_frame(x = c(0, 1)), aes(x)) + 
+    stat_function(fun = logL) + 
+    xlab(expression(theta)) + 
+    ylab(expression("L("~theta~")")) + 
+    geom_vline(xintercept = c(0.12, 0.74), linetype = 2)
+
 data_frame(y = sapply(c(1:3000), function(x){
     rpois(50, lambda = 3.5) %>>% mean
 })) %>>% ggplot(aes(x = y)) + 
@@ -127,5 +138,16 @@ data_frame(y = sapply(c(1:3000), function(x){
     geom_histogram(colour = "black", fill = gray(0.6), binwidth = 0.1) + 
     scale_x_continuous(limits = c(2.5, 4.5), breaks = seq(2.5, 4.5, 0.5)) + 
     xlab(expression("Estimated "~lambda~"for each trial"))
+
+ggplot(data_frame(x = c(0:40)), aes(x)) + 
+    stat_function(geom="point", n=41, fun = dbinom, args = list(size = 10, prob = 0.4), colour = "blue") +
+    stat_function(geom="point", n=41, fun = dbinom, args = list(size = 20, prob = 0.7), colour = "green") + 
+    stat_function(geom="point", n=41, fun = dbinom, args = list(size = 40, prob = 0.5), colour = "red")
+
+ggplot(data_frame(x = c(0, 20)), aes(x)) + 
+       stat_function(fun = dgamma, args = list(shape = 1, rate = 0.5), colour = "red") + 
+       stat_function(fun = dgamma, args = list(shape = 2, rate = 0.5), colour = "orange") + 
+       stat_function(fun = dgamma, args = list(shape = 1, rate = 1), colour = "blue") + 
+       stat_function(fun = dgamma, args = list(shape = 2, rate = 1), colour = "green") 
 
 devtools::session_info()
