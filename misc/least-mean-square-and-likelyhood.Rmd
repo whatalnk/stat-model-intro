@@ -1,0 +1,43 @@
+---
+title: 最小二乗法と最尤推定
+author: ""
+date: "`r format(Sys.time(), '%Y-%m-%d')`"
+documentclass: bxjsarticle
+output: 
+  pdf_document:
+    keep_tex: yes
+    latex_engine: xelatex
+
+classoption: a4paper,xelatex,ja=standard
+keep_tex: yes
+geometry: no
+---
+
+```{r setup, include = FALSE}
+# sapply(c("pipeR", "dplyr", "tidyr", "ggplot2", "readr", "readxl"), require, character.only=TRUE)
+knitr::opts_chunk$set(echo=FALSE)
+```
+
+$\boldsymbol{X} = \{x_1, x_2, \ldots, x_n \}$，$\boldsymbol{Y} = \{y_1, y_2, \ldots, y_n\}$ に $y = ax+b$ を当てはめることを考える．
+
+# 最小二乗法
+実測値$y_i$ と推定値$ax_i + b$の誤差 $y_i - (ax_i + b)$の二乗和 $\sum\limits_{i=1}^{n}\{y_i - (ax_i + b)\}$を最小にする$a$，$b$を探す．
+
+# 最尤推定
+実測値$y_i$ と推定値$ax_i + b$の誤差$\epsilon$を $\epsilon_i = y_i - (ax_i + b)$とする．
+誤差$\epsilon$が平均$\mu$，分散$\sigma^2$の正規分布に従うとすると，
+
+$$ \epsilon_i = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x_i - \mu_i)^2}{2\sigma^2}\right)$$
+
+尤度$L$は，$y_i$が得られる確率の積，つまり$\epsilon_i$が得られる確率の積なので，
+
+$$L = \prod\limits_{i = 1}^{n}\epsilon_i = \prod\limits_{i = 1}^{n}\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x_i - \mu_i)^2}{2\sigma^2}\right)$$
+
+対数尤度$\log L$は，
+
+\begin{eqnarray*}
+  \log L &= \sum\limits_{i = 1}^{n}\{\log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{(x_i - \mu_i)^2}{2\sigma^2}  \} \\
+  &= n \log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{1}{2\sigma^2}\sum\limits_{i = 1}^{n}(x_i - \mu_i)^2
+\end{eqnarray*}
+
+定数を除いて考えると，$\sum\limits_{i = 1}^{n}(x_i - \mu_i)^2$ が最小のとき，$\log L$は最大となるので，$\mu_i = ax_i + b$ より最小二乗法の場合と一致する．
