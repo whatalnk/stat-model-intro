@@ -2,4 +2,5 @@
 **/Chap11.*
 data/chap11/
 runbugs.R
-
+misc/*.pdf
+misc/*.tex
