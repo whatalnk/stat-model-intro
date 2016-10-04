@@ -25,19 +25,22 @@ $\boldsymbol{X} = \{x_1, x_2, \ldots, x_n \}$，$\boldsymbol{Y} = \{y_1, y_2, \l
 
 # 最尤推定
 実測値$y_i$ と推定値$ax_i + b$の誤差$\epsilon$を $\epsilon_i = y_i - (ax_i + b)$とする．
-誤差$\epsilon$が平均$\mu$，分散$\sigma^2$の正規分布に従うとすると，
+誤差$\epsilon$が平均$\mu = 0$，分散$\sigma^2$の正規分布に従うとすると，$\epsilon_i$が得られる確率$p(\epsilon)$は，
 
-$$ \epsilon_i = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x_i - \mu_i)^2}{2\sigma^2}\right)$$
+$$
+p(\epsilon_i) = \frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(\epsilon_i - \mu)^2}{2\sigma^2}\right) \\
+$$
 
 尤度$L$は，$y_i$が得られる確率の積，つまり$\epsilon_i$が得られる確率の積なので，
 
-$$L = \prod\limits_{i = 1}^{n}\epsilon_i = \prod\limits_{i = 1}^{n}\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(x_i - \mu_i)^2}{2\sigma^2}\right)$$
+$$L = \prod\limits_{i = 1}^{n}p(\epsilon_i) = \prod\limits_{i = 1}^{n}\frac{1}{\sqrt{2\pi\sigma^2}}\exp\left(-\frac{(\epsilon_i - \mu)^2}{2\sigma^2}\right)$$
 
 対数尤度$\log L$は，
 
 \begin{eqnarray*}
-  \log L &= \sum\limits_{i = 1}^{n}\{\log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{(x_i - \mu_i)^2}{2\sigma^2}  \} \\
-  &= n \log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{1}{2\sigma^2}\sum\limits_{i = 1}^{n}(x_i - \mu_i)^2
+  \log L &=& \sum\limits_{i = 1}^{n}\left(\log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{(\epsilon_i - \mu)^2}{2\sigma^2}\right) \\
+  &=& n \log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{1}{2\sigma^2}\sum\limits_{i = 1}^{n}(\epsilon_i - \mu)^2 \\
+  &=& n \log \frac{1}{\sqrt{2\pi\sigma^2}} - \frac{1}{2\sigma^2}\sum\limits_{i = 1}^{n}\{y_i - (ax_i + b)\}^2
 \end{eqnarray*}
 
-定数を除いて考えると，$\sum\limits_{i = 1}^{n}(x_i - \mu_i)^2$ が最小のとき，$\log L$は最大となるので，$\mu_i = ax_i + b$ より最小二乗法の場合と一致する．
+定数を除いて考えると，$\sum\limits_{i = 1}^{n}\{y_i - (ax_i + b)\}^2$ が最小のとき，$\log L$は最大となり，最小二乗法の場合と一致する．
