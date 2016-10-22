@@ -11821,10 +11821,10 @@ div#notebook {
     <span class="p">(</span><span class="kr">function</span><span class="p">(</span>x<span class="p">){</span>
         notinstalled <span class="o">&lt;-</span> x<span class="p">[</span><span class="o">!</span><span class="p">(</span>x <span class="o">%in%</span> installed.packages<span class="p">()[,</span> <span class="s">&quot;Package&quot;</span><span class="p">])]</span>
         <span class="kr">if</span> <span class="p">(</span><span class="kp">length</span><span class="p">(</span>notinstalled<span class="p">)</span> <span class="o">&gt;</span> <span class="m">0</span><span class="p">)</span> <span class="p">{</span>
-            <span class="kp">cat</span><span class="p">(</span><span class="kp">sprintf</span><span class="p">(</span><span class="s">&quot;Install %d packages: %s&quot;</span><span class="p">,</span> <span class="kp">length</span><span class="p">(</span>notinstalled<span class="p">),</span> notinstalled<span class="p">))</span>
+            <span class="kp">cat</span><span class="p">(</span><span class="kp">sprintf</span><span class="p">(</span><span class="s">&quot;Install %d packages: %s \n&quot;</span><span class="p">,</span> <span class="kp">length</span><span class="p">(</span>notinstalled<span class="p">),</span> notinstalled<span class="p">))</span>
             install.packages<span class="p">(</span>notinstalled<span class="p">)</span>
         <span class="p">}</span> <span class="kr">else</span> <span class="p">{</span>
-            <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;Already installed&quot;</span><span class="p">)</span>
+            <span class="kp">cat</span><span class="p">(</span><span class="s">&quot;Already installed\n&quot;</span><span class="p">)</span>
            installed.packages<span class="p">()[,</span> <span class="s">&quot;Version&quot;</span><span class="p">][</span>x<span class="p">]</span> 
         <span class="p">}</span>
     <span class="p">})(</span><span class="kt">c</span><span class="p">(</span><span class="s">&quot;pipeR&quot;</span><span class="p">,</span> <span class="s">&quot;dplyr&quot;</span><span class="p">,</span> <span class="s">&quot;tidyr&quot;</span><span class="p">,</span> <span class="s">&quot;ggplot2&quot;</span><span class="p">,</span> <span class="s">&quot;readr&quot;</span><span class="p">,</span> <span class="s">&quot;knitr&quot;</span><span class="p">,</span> <span class="s">&quot;devtools&quot;</span><span class="p">))</span>

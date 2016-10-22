@@ -3,10 +3,10 @@ if (interactive()) {
     (function(x){
         notinstalled <- x[!(x %in% installed.packages()[, "Package"])]
         if (length(notinstalled) > 0) {
-            cat(sprintf("Install %d packages: %s", length(notinstalled), notinstalled))
+            cat(sprintf("Install %d packages: %s \n", length(notinstalled), notinstalled))
             install.packages(notinstalled)
         } else {
-            cat("Already installed")
+            cat("Already installed\n")
            installed.packages()[, "Version"][x] 
         }
     })(c("pipeR", "dplyr", "tidyr", "ggplot2", "readr", "knitr", "devtools"))
