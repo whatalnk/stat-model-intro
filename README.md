@@ -7,8 +7,8 @@ title: stat-model-intro
 * [著者サポートページ](http://hosho.ees.hokudai.ac.jp/~kubo/ce/IwanamiBook.html)
 
 ## 目次
-* [1章](/stat-model-intro/Chap01)
 * [2章](/stat-model-intro/Chap02)
+* [5章](/stat-model-intro/Chap05)
 
 ## その他
 * [Jupyterインストール](/stat-model-intro/install-jupyter)
