@@ -80,9 +80,39 @@ sum(dd12 >= 4.5)
 
 as.numeric(c(TRUE, FALSE))
 
-26 / 1000
+sum(dd12 >= 4.5) / 1000
 
 quantile(dd12, 0.95)
+
+library(boot)
+
+b <- boot(
+    d, 
+    function(data){
+        fit1 <- glm(y ~ 1, data = data, family = poisson)
+        fit2 <- glm(y ~ x, data = data, family = poisson)
+        fit1$deviance - fit2$deviance
+    }, 
+    R = 1000, 
+    sim = "parametric", 
+    ran.gen = function(data, mle){
+        out <- data
+        out$y <- rpois(nrow(out), lambda = mle)
+        out
+    }, 
+    mle = mean(d$y)
+)
+b
+
+str(b)
+
+summary(b$t[,1])
+
+sum(b$t >= 4.5)
+
+sum(b$t >= 4.5) / 1000
+
+quantile(b$t, 0.95)
 
 anova(fit.null, fit.x, test = "Chisq") %>>% print()
 
