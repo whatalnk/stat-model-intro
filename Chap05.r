@@ -64,6 +64,8 @@ pb
 
 dd12 <- pb(d, n.bootstrap = 1000)
 
+dd12.x <- pb(d, n.bootstrap = 10000)
+
 summary(dd12)
 
 options(repr.plot.width = 4, repr.plot.height = 4)
@@ -76,7 +78,17 @@ data.frame(x = dd12) %>>%
     geom_vline(xintercept = 4.5, size = 0.5, linetype = "dotted") + 
     xlab(expression(Delta~italic(D)[`1,2`]))
 
+data.frame(x = dd12.x) %>>% 
+    ggplot(aes(x = x)) + 
+    geom_histogram(bins = 100, colour = "black", fill = "white", size = 0.3) + 
+    scale_x_continuous(limits = c(0, 20), breaks = seq(0, 20, 5)) + 
+    theme_bw() + 
+    geom_vline(xintercept = 4.5, size = 0.5, linetype = "dotted") + 
+    xlab(expression(Delta~italic(D)[`1,2`]))
+
 sum(dd12 >= 4.5)
+
+sum(dd12.x >= 4.5)
 
 as.numeric(c(TRUE, FALSE))
 
