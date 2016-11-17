@@ -6,16 +6,14 @@ sapply(c("pipeR", "dplyr", "tidyr", "ggplot2", "readr"), require, character.only
 load("data/chap08/data.RData")
 str(data)
 
-options(repr.plot.width = 4, repr.plot.height = 4)
-
 table(data)
 
 sum(data)
 
+options(repr.plot.width = 4, repr.plot.height = 4)
+
 ggplot(data_frame(x = c(0, 8)), aes(x)) + 
     geom_histogram(data = data_frame(y = data), mapping = aes(x = y), binwidth = 1, colour = "white") + 
-    stat_function(geom="point", n=9, fun = function(x, size, prob){20 * dbinom(x, size, prob)}, 
-                  args = list(size = 8, prob = 0.45), shape = 21, fill = "white") + 
     xlab(expression("y"[i]))
 
 logL <- function(q, y){
@@ -30,10 +28,16 @@ data_frame(q = seq(0.2, 0.7, 0.01)) %>>%
     geom_line() + 
     geom_vline(xintercept = 0.46, linetype = "dotted")
 
-73 / 160
+sum(data) / (8 * 20)
+
+ggplot(data_frame(x = c(0, 8)), aes(x)) + 
+    geom_histogram(data = data_frame(y = data), mapping = aes(x = y), binwidth = 1, colour = "white") + 
+    stat_function(geom="point", n=9, fun = function(x, size, prob){20 * dbinom(x, size, prob)}, 
+                  args = list(size = 8, prob = 0.45), shape = 21, fill = "white", size = 2) + 
+    xlab(expression("y"[i]))
 
 step_logL <- function(q, L, data){
-    nq <- ifelse(sample(c(0, 1), size = 1, prob = c(0.5, 0.5)) == 0, q - 0.01, q + 0.01)
+    nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
     nL <- logL(nq, data)
     if (nL > L){
         return(list(q = nq, L = nL))
@@ -54,6 +58,8 @@ do_step_logL <- function(start, nstep, data){
     return(qs)
 }
 
+do_step_logL(0.3, 100, data) %>>% last()
+
 data_frame(nstep = c(1:100), q03 = do_step_logL(0.3, 100, data), q06 = do_step_logL(0.6, 100, data)) %>>% 
     gather(start, q, -nstep) %>>% 
     ggplot(aes(x = nstep, y = q, group = start, linetype = start)) + 
@@ -65,7 +71,7 @@ data_frame(nstep = c(1:100), q03 = do_step_logL(0.3, 100, data), q06 = do_step_l
         scale_linetype(labels = c("0.30", "0.60"))
 
 step_metropolis <- function(q, L, data){
-    nq <- ifelse(sample(c(0, 1), size = 1, prob = c(0.5, 0.5)) == 0, q - 0.01, q + 0.01)
+    nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
     nL <- logL(nq, data)
     if (nL > L){
         return(list(q = nq, L = nL))
@@ -92,20 +98,20 @@ metropolis <- function(start, nstep, data){
     return(qs)
 }
 
-library(gridExtra)
-
-options(repr.plot.width = 10, repr.plot.height = 2)
-
 step_metropolis(0.3, L = logL(0.4, data), data)
 
 metropolis(start = 0.3, nstep = 10, data = data)
+
+library(gridExtra)
+
+options(repr.plot.width = 10, repr.plot.height = 3)
 
 d.met1 <- data_frame(
     nstep = c(1:100), 
     q = metropolis(0.3, 100, data)
 )
 gp1 <- ggplot(data = d.met1, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = d.met1, aes(q)) + geom_histogram(binwidth = 0.01) + xlim(c(0, 1))
+gp2 <- ggplot(data = d.met1, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 d.met2 <- data_frame(
@@ -113,7 +119,7 @@ d.met2 <- data_frame(
     q = metropolis(0.3, 1000, data)
 )
 gp1 <- ggplot(data = d.met2, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = d.met2, aes(q)) + geom_histogram(binwidth = 0.01) + xlim(c(0,1))
+gp2 <- ggplot(data = d.met2, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 d.met3 <- data_frame(
@@ -121,7 +127,7 @@ d.met3 <- data_frame(
     q = metropolis(0.3, 100000, data)
 )
 gp1 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(q)) + geom_histogram(binwidth = 0.01) + xlim(c(0, 1))
+gp2 <- ggplot(data = d.met3, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 d.met4 <- data_frame(
@@ -140,4 +146,42 @@ options(repr.plot.width = 8, repr.plot.height = 4)
 d.met4 %>>% gather(start, q, -nstep) %>>% 
     ggplot(aes(x = nstep, y = q, group = start, colour = start)) + 
     geom_line() + 
-    scale_colour_discrete(labels = c("0.1", "0.3", "0.4", "0.45", "0.5", "0.6", "0.7"))
+    scale_colour_discrete(labels = c("0.1", "0.3", "0.4", "0.45", "0.5", "0.6", "0.7")) 
+
+st.dist <- function(data, size, vq){
+    vlogL <- sapply(vq, function(x){logL(x, data)})
+    exp(vlogL) / sum(exp(vlogL))
+}
+
+vq <- seq(0.01, 0.99, 0.01)
+ddL <- data_frame(vq, st.dist = st.dist(data, 8, vq))
+
+met.freq.q <- function(q){
+    lcount <- hist(q, breaks = seq(min(vq) - 0.01 * 0.5, max(vq) + 0.01 * 0.5, 0.01), plot = FALSE)$count
+    lcount / sum(lcount)
+}
+
+options(repr.plot.width = 10, repr.plot.height = 3)
+
+gp1 <- ggplot(data = d.met1, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
+gp2 <- ggplot(data = data_frame(vq, dens = met.freq.q(d.met1$q)), aes(x = vq, y = dens)) + 
+    geom_bar(stat = "identity") + 
+    geom_line(data = ddL, mapping = aes(x = vq, y = st.dist)) + 
+    xlim(c(0.25, 0.65))
+grid.arrange(gp1, gp2, ncol = 2)
+
+gp1 <- ggplot(data = d.met2, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
+gp2 <- ggplot(data = data_frame(vq, dens = met.freq.q(d.met2$q)), aes(x = vq, y = dens)) + 
+    geom_bar(stat = "identity") + 
+    geom_line(data = ddL, mapping = aes(x = vq, y = st.dist)) + 
+    xlim(c(0.25, 0.65))
+grid.arrange(gp1, gp2, ncol = 2)
+
+gp1 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
+gp2 <- ggplot(data = data_frame(vq, dens = met.freq.q(d.met3$q)), aes(x = vq, y = dens)) + 
+    geom_bar(stat = "identity") + 
+    geom_line(data = ddL, mapping = aes(x = vq, y = st.dist)) + 
+    xlim(c(0.25, 0.65))
+grid.arrange(gp1, gp2, ncol = 2)
+
+devtools::session_info()
