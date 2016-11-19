@@ -4,6 +4,8 @@ date()
 sapply(c("pipeR", "dplyr", "tidyr", "ggplot2", "readr"), require, character.only = TRUE)
 
 load("data/chap08/data.RData")
+# or
+# data <- c(4,3,4,5,5,2,3,1,4,0,1,5,5,6,5,4,4,5,3,4)
 str(data)
 
 table(data)
