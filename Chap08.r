@@ -38,31 +38,62 @@ ggplot(data_frame(x = c(0, 8)), aes(x)) +
                   args = list(size = 8, prob = 0.45), shape = 21, fill = "white", size = 2) + 
     xlab(expression("y"[i]))
 
-step_logL <- function(q, L, data){
-    nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
-    nL <- logL(nq, data)
-    if (nL > L){
-        return(list(q = nq, L = nL))
-    } else {
-        return(list(q = q, L = L))
-    }
-}
+library("R6")
 
-do_step_logL <- function(start, nstep, data){
-    qs <- numeric(nstep)
-    qs[1] <- start
-    pL <- logL(start, data)
-    for(i in c(2:nstep)){
-        q_L <- step_logL(qs[i - 1], pL, data)
-        qs[i] <- q_L$q
-        pL <- q_L$L
-    }
-    return(qs)
-}
+runif(1)
 
-do_step_logL(0.3, 100, data) %>>% last()
+MCMC <- R6Class("MCMC",
+    public = list(
+        data = NULL,
+        initialize = function(data = NA) {
+            self$data <- data
+        }
+    ), 
+    private = list(
+        logL = function(q){
+            sum(self$data * log(q) + (8 - self$data) * log(1 - q) + log(choose(8, self$data)))
+        } 
+    )
+  
+)
 
-data_frame(nstep = c(1:100), q03 = do_step_logL(0.3, 100, data), q06 = do_step_logL(0.6, 100, data)) %>>% 
+MCMC.walk <- R6Class("MCMC.walk",
+    inherit = MCMC, 
+    public = list(
+        walk = function(start, nstep){
+            qs <- numeric(nstep)
+            qs[1] <- start
+            pL <- super$logL(start)
+            for(i in c(2:nstep)){
+                q_L <- private$generate_step(qs[i - 1], pL)
+                qs[i] <- q_L$q
+                pL <- q_L$L
+            }
+            return(qs)
+        }
+    ), 
+    private = list(
+        generate_step = function(q, L){
+            nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
+            nL <- super$logL(nq)
+            if (nL > L){
+                return(list(q = nq, L = nL))
+            } else {
+                return(list(q = q, L = L))
+            }
+        }
+    )
+  
+)
+
+mcmc.walk <- MCMC.walk$new(data)
+mcmc.walk
+
+mcmc.walk$data
+
+mcmc.walk$walk(0.3, 100) %>>% last()
+
+data_frame(nstep = c(1:100), q03 = mcmc.walk$walk(0.3, 100), q06 = mcmc.walk$walk(0.6, 100)) %>>% 
     gather(start, q, -nstep) %>>% 
     ggplot(aes(x = nstep, y = q, group = start, linetype = start)) + 
         geom_line() + 
@@ -72,37 +103,44 @@ data_frame(nstep = c(1:100), q03 = do_step_logL(0.3, 100, data), q06 = do_step_l
         ) + 
         scale_linetype(labels = c("0.30", "0.60"))
 
-step_metropolis <- function(q, L, data){
-    nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
-    nL <- logL(nq, data)
-    if (nL > L){
-        return(list(q = nq, L = nL))
-    } else {
-        r <- exp(nL - L)
-        if(sample(c(0, 1), size = 1, prob = c(r, 1 - r)) == 0){
-            return(list(q = nq, L = nL))
-            
-        } else {
-            return(list(q = q, L = L))            
-        }
-    }
-}
+MCMC.metropolis <- R6Class("MCMC.metropolis",
+    inherit = MCMC, 
+    public = list(
+        metropolis = function(start, nstep){
+            qs <- numeric(nstep)
+            qs[1] <- start
+            pL <- super$logL(start)
+            for(i in c(2:nstep)){
+                q_L <- private$generate_step(qs[i - 1], pL)
+                qs[i] <- q_L$q
+                pL <- q_L$L
+            }
+            return(qs)
+        } 
+    ), 
+    private = list(
+        generate_step = function(q, L){
+            nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
+            nL <- super$logL(nq)
+            if (nL > L){
+                return(list(q = nq, L = nL))
+            } else {
+                r <- exp(nL - L)
+                if(sample(c(0, 1), size = 1, prob = c(r, 1 - r)) == 0){
+                    return(list(q = nq, L = nL))
 
-metropolis <- function(start, nstep, data){
-    qs <- numeric(nstep)
-    qs[1] <- start
-    pL <- logL(start, data)
-    for(i in c(2:nstep)){
-        q_L <- step_metropolis(qs[i - 1], pL, data)
-        qs[i] <- q_L$q
-        pL <- q_L$L
-    }
-    return(qs)
-}
+                } else {
+                    return(list(q = q, L = L))            
+                }
+            }
+        }    
+    ) 
+)
 
-step_metropolis(0.3, L = logL(0.4, data), data)
+mcmc.metropolis <- MCMC.metropolis$new(data)
+mcmc.metropolis
 
-metropolis(start = 0.3, nstep = 10, data = data)
+mcmc.metropolis$metropolis(0.3, 10)
 
 library(gridExtra)
 
@@ -110,7 +148,7 @@ options(repr.plot.width = 10, repr.plot.height = 3)
 
 d.met1 <- data_frame(
     nstep = c(1:100), 
-    q = metropolis(0.3, 100, data)
+    q = mcmc.metropolis$metropolis(0.3, 100)
 )
 gp1 <- ggplot(data = d.met1, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
 gp2 <- ggplot(data = d.met1, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
@@ -118,7 +156,7 @@ grid.arrange(gp1, gp2, ncol = 2)
 
 d.met2 <- data_frame(
     nstep = c(1:1000), 
-    q = metropolis(0.3, 1000, data)
+    q = mcmc.metropolis$metropolis(0.3, 1000)
 )
 gp1 <- ggplot(data = d.met2, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
 gp2 <- ggplot(data = d.met2, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
@@ -126,7 +164,7 @@ grid.arrange(gp1, gp2, ncol = 2)
 
 d.met3 <- data_frame(
     nstep = c(1:100000), 
-    q = metropolis(0.3, 100000, data)
+    q = mcmc.metropolis$metropolis(0.3, 100000)
 )
 gp1 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
 gp2 <- ggplot(data = d.met3, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
@@ -134,13 +172,13 @@ grid.arrange(gp1, gp2, ncol = 2)
 
 d.met4 <- data_frame(
     nstep = c(1:500), 
-    q1 = metropolis(0.1, 500, data), 
-    q3 = metropolis(0.3, 500, data), 
-    q4 = metropolis(0.4, 500, data), 
-    q45 = metropolis(0.45, 500, data),    
-    q5 = metropolis(0.5, 500, data), 
-    q6 = metropolis(0.6, 500, data), 
-    q7 = metropolis(0.7, 500, data) 
+    q1 = mcmc.metropolis$metropolis(0.1, 500), 
+    q3 = mcmc.metropolis$metropolis(0.3, 500), 
+    q4 = mcmc.metropolis$metropolis(0.4, 500), 
+    q45 = mcmc.metropolis$metropolis(0.45, 500),    
+    q5 = mcmc.metropolis$metropolis(0.5, 500), 
+    q6 = mcmc.metropolis$metropolis(0.6, 500), 
+    q7 = mcmc.metropolis$metropolis(0.7, 500) 
 )
 
 options(repr.plot.width = 8, repr.plot.height = 4)
