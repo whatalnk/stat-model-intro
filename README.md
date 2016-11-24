@@ -9,6 +9,7 @@ title: stat-model-intro
 ## 目次
 * [2章](/stat-model-intro/Chap02)
 * [5章](/stat-model-intro/Chap05)
+* [8章](/stat-model-intro/Chap08)
 
 ## その他
 * [Jupyterインストール](/stat-model-intro/install-jupyter)
