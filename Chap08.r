@@ -73,7 +73,7 @@ MCMC.walk <- R6Class("MCMC.walk",
     ), 
     private = list(
         generate_step = function(q, L){
-            nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
+            nq <- dplyr::if_else(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
             nL <- super$logL(nq)
             if (nL > L){
                 return(list(q = nq, L = nL))
@@ -121,7 +121,7 @@ MCMC.metropolis <- R6Class("MCMC.metropolis",
     ), 
     private = list(
         generate_step = function(q, L){
-            nq <- ifelse(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
+            nq <- dplyr::if_else(sample(c(TRUE, FALSE), size = 1, prob = c(0.5, 0.5)), q - 0.01, q + 0.01)
             nL <- super$logL(nq)
             if (nL > L){
                 return(list(q = nq, L = nL))
