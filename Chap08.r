@@ -44,12 +44,13 @@ runif(1)
 
 MCMC <- R6Class("MCMC",
     public = list(
-        data = NULL,
+        data = NULL, 
         initialize = function(data = NA) {
             self$data <- data
         }
     ), 
     private = list(
+        vq = seq(0.01, 0.99, 0.01), 
         logL = function(q){
             sum(self$data * log(q) + (8 - self$data) * log(1 - q) + log(choose(8, self$data)))
         } 
@@ -60,7 +61,7 @@ MCMC <- R6Class("MCMC",
 MCMC.walk <- R6Class("MCMC.walk",
     inherit = MCMC, 
     public = list(
-        walk = function(start, nstep){
+        doMCMC = function(start, nstep){
             qs <- numeric(nstep)
             qs[1] <- start
             pL <- super$logL(start)
@@ -91,9 +92,9 @@ mcmc.walk
 
 mcmc.walk$data
 
-mcmc.walk$walk(0.3, 100) %>>% last()
+mcmc.walk$doMCMC(0.3, 100) %>>% last()
 
-data_frame(nstep = c(1:100), q03 = mcmc.walk$walk(0.3, 100), q06 = mcmc.walk$walk(0.6, 100)) %>>% 
+data_frame(nstep = c(1:100), q03 = mcmc.walk$doMCMC(0.3, 100), q06 = mcmc.walk$doMCMC(0.6, 100)) %>>% 
     gather(start, q, -nstep) %>>% 
     ggplot(aes(x = nstep, y = q, group = start, linetype = start)) + 
         geom_line() + 
@@ -106,7 +107,7 @@ data_frame(nstep = c(1:100), q03 = mcmc.walk$walk(0.3, 100), q06 = mcmc.walk$wal
 MCMC.metropolis <- R6Class("MCMC.metropolis",
     inherit = MCMC, 
     public = list(
-        metropolis = function(start, nstep){
+        doMCMC = function(start, nstep){
             qs <- numeric(nstep)
             qs[1] <- start
             pL <- super$logL(start)
@@ -140,7 +141,7 @@ MCMC.metropolis <- R6Class("MCMC.metropolis",
 mcmc.metropolis <- MCMC.metropolis$new(data)
 mcmc.metropolis
 
-mcmc.metropolis$metropolis(0.3, 10)
+mcmc.metropolis$doMCMC(0.3, 10)
 
 library(gridExtra)
 
@@ -148,7 +149,7 @@ options(repr.plot.width = 10, repr.plot.height = 3)
 
 d.met1 <- data_frame(
     nstep = c(1:100), 
-    q = mcmc.metropolis$metropolis(0.3, 100)
+    q = mcmc.metropolis$doMCMC(0.3, 100)
 )
 gp1 <- ggplot(data = d.met1, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
 gp2 <- ggplot(data = d.met1, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
@@ -156,7 +157,7 @@ grid.arrange(gp1, gp2, ncol = 2)
 
 d.met2 <- data_frame(
     nstep = c(1:1000), 
-    q = mcmc.metropolis$metropolis(0.3, 1000)
+    q = mcmc.metropolis$doMCMC(0.3, 1000)
 )
 gp1 <- ggplot(data = d.met2, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
 gp2 <- ggplot(data = d.met2, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
@@ -164,7 +165,7 @@ grid.arrange(gp1, gp2, ncol = 2)
 
 d.met3 <- data_frame(
     nstep = c(1:100000), 
-    q = mcmc.metropolis$metropolis(0.3, 100000)
+    q = mcmc.metropolis$doMCMC(0.3, 100000)
 )
 gp1 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
 gp2 <- ggplot(data = d.met3, aes(x = q)) + geom_histogram(binwidth = 0.01) + xlim(c(0.25, 0.65))
@@ -172,13 +173,13 @@ grid.arrange(gp1, gp2, ncol = 2)
 
 d.met4 <- data_frame(
     nstep = c(1:500), 
-    q1 = mcmc.metropolis$metropolis(0.1, 500), 
-    q3 = mcmc.metropolis$metropolis(0.3, 500), 
-    q4 = mcmc.metropolis$metropolis(0.4, 500), 
-    q45 = mcmc.metropolis$metropolis(0.45, 500),    
-    q5 = mcmc.metropolis$metropolis(0.5, 500), 
-    q6 = mcmc.metropolis$metropolis(0.6, 500), 
-    q7 = mcmc.metropolis$metropolis(0.7, 500) 
+    q1 = mcmc.metropolis$doMCMC(0.1, 500), 
+    q3 = mcmc.metropolis$doMCMC(0.3, 500), 
+    q4 = mcmc.metropolis$doMCMC(0.4, 500), 
+    q45 = mcmc.metropolis$doMCMC(0.45, 500),    
+    q5 = mcmc.metropolis$doMCMC(0.5, 500), 
+    q6 = mcmc.metropolis$doMCMC(0.6, 500), 
+    q7 = mcmc.metropolis$doMCMC(0.7, 500) 
 )
 
 options(repr.plot.width = 8, repr.plot.height = 4)
@@ -188,39 +189,40 @@ d.met4 %>>% gather(start, q, -nstep) %>>%
     geom_line() + 
     scale_colour_discrete(labels = c("0.1", "0.3", "0.4", "0.45", "0.5", "0.6", "0.7")) 
 
-st.dist <- function(data, size, vq){
-    vlogL <- sapply(vq, function(x){logL(x, data)})
-    exp(vlogL) / sum(exp(vlogL))
-}
+MCMC.metropolis$set("public", "st.dist", function(){
+    vlogL <- sapply(private$vq, function(x){super$logL(x)})
+    data_frame(vq = private$vq, st.dist = exp(vlogL) / sum(exp(vlogL)))
+})
+MCMC.metropolis
 
-vq <- seq(0.01, 0.99, 0.01)
-ddL <- data_frame(vq, st.dist = st.dist(data, 8, vq))
+mcmc.metropolis.st <- MCMC.metropolis$new(data)
+dd <- mcmc.metropolis.st$st.dist()
 
-met.freq.q <- function(q){
+met.freq.q <- function(vq, q){
     lcount <- hist(q, breaks = seq(min(vq) - 0.01 * 0.5, max(vq) + 0.01 * 0.5, 0.01), plot = FALSE)$count
-    lcount / sum(lcount)
+    data_frame(vq, dens = lcount / sum(lcount))
 }
 
 options(repr.plot.width = 10, repr.plot.height = 3)
 
 gp1 <- ggplot(data = d.met1, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = data_frame(vq, dens = met.freq.q(d.met1$q)), aes(x = vq, y = dens)) + 
+gp2 <- ggplot(data = met.freq.q(seq(0.01, 0.99, 0.01), d.met1$q), aes(x = vq, y = dens)) + 
     geom_bar(stat = "identity") + 
-    geom_line(data = ddL, mapping = aes(x = vq, y = st.dist)) + 
+    geom_line(data = dd, mapping = aes(x = vq, y = st.dist)) + 
     xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 gp1 <- ggplot(data = d.met2, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = data_frame(vq, dens = met.freq.q(d.met2$q)), aes(x = vq, y = dens)) + 
+gp2 <- ggplot(data = met.freq.q(seq(0.01, 0.99, 0.01), d.met2$q), aes(x = vq, y = dens)) + 
     geom_bar(stat = "identity") + 
-    geom_line(data = ddL, mapping = aes(x = vq, y = st.dist)) + 
+    geom_line(data = dd, mapping = aes(x = vq, y = st.dist)) + 
     xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 gp1 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = data_frame(vq, dens = met.freq.q(d.met3$q)), aes(x = vq, y = dens)) + 
+gp2 <- ggplot(data = met.freq.q(seq(0.01, 0.99, 0.01), d.met3$q), aes(x = vq, y = dens)) + 
     geom_bar(stat = "identity") + 
-    geom_line(data = ddL, mapping = aes(x = vq, y = st.dist)) + 
+    geom_line(data = dd, mapping = aes(x = vq, y = st.dist)) + 
     xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
