@@ -40,17 +40,15 @@ ggplot(data_frame(x = c(0, 8)), aes(x)) +
 
 library("R6")
 
-runif(1)
-
 MCMC <- R6Class("MCMC",
     public = list(
         data = NULL, 
+        vq = seq(0.01, 0.99, 0.01), 
         initialize = function(data = NA) {
             self$data <- data
         }
     ), 
     private = list(
-        vq = seq(0.01, 0.99, 0.01), 
         logL = function(q){
             sum(self$data * log(q) + (8 - self$data) * log(1 - q) + log(choose(8, self$data)))
         } 
@@ -91,6 +89,8 @@ mcmc.walk <- MCMC.walk$new(data)
 mcmc.walk
 
 mcmc.walk$data
+
+mcmc.walk$vq %>>% head()
 
 mcmc.walk$doMCMC(0.3, 100) %>>% last()
 
@@ -190,9 +190,9 @@ d.met4 %>>% gather(start, q, -nstep) %>>%
     scale_colour_discrete(labels = c("0.1", "0.3", "0.4", "0.45", "0.5", "0.6", "0.7")) 
 
 MCMC.metropolis$set("public", "st.dist", function(){
-    vlogL <- sapply(private$vq, function(x){super$logL(x)})
-    data_frame(vq = private$vq, st.dist = exp(vlogL) / sum(exp(vlogL)))
-})
+    vlogL <- sapply(self$vq, function(x){super$logL(x)})
+    data_frame(vq = self$vq, st.dist = exp(vlogL) / sum(exp(vlogL)))
+}, overwrite = TRUE)
 MCMC.metropolis
 
 mcmc.metropolis.st <- MCMC.metropolis$new(data)
@@ -206,21 +206,21 @@ met.freq.q <- function(vq, q){
 options(repr.plot.width = 10, repr.plot.height = 3)
 
 gp1 <- ggplot(data = d.met1, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = met.freq.q(seq(0.01, 0.99, 0.01), d.met1$q), aes(x = vq, y = dens)) + 
+gp2 <- ggplot(data = met.freq.q(mcmc.metropolis$vq, d.met1$q), aes(x = vq, y = dens)) + 
     geom_bar(stat = "identity") + 
     geom_line(data = dd, mapping = aes(x = vq, y = st.dist)) + 
     xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 gp1 <- ggplot(data = d.met2, aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = met.freq.q(seq(0.01, 0.99, 0.01), d.met2$q), aes(x = vq, y = dens)) + 
+gp2 <- ggplot(data = met.freq.q(mcmc.metropolis$vq, d.met2$q), aes(x = vq, y = dens)) + 
     geom_bar(stat = "identity") + 
     geom_line(data = dd, mapping = aes(x = vq, y = st.dist)) + 
     xlim(c(0.25, 0.65))
 grid.arrange(gp1, gp2, ncol = 2)
 
 gp1 <- ggplot(data = slice(d.met3, seq(1, 100000, 100)), aes(x = nstep, y = q)) + geom_line() + ylim(c(0.25, 0.65))
-gp2 <- ggplot(data = met.freq.q(seq(0.01, 0.99, 0.01), d.met3$q), aes(x = vq, y = dens)) + 
+gp2 <- ggplot(data = met.freq.q(mcmc.metropolis$vq, d.met3$q), aes(x = vq, y = dens)) + 
     geom_bar(stat = "identity") + 
     geom_line(data = dd, mapping = aes(x = vq, y = st.dist)) + 
     xlim(c(0.25, 0.65))
