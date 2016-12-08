@@ -42,6 +42,8 @@ post.jags <- coda.samples(
     thin = 3, n.iter = 1500
 )
 
+saveRDS(post.jags, file = "chap09-post-jags.rds")
+
 str(post.jags)
 
 summary(post.jags)
@@ -66,35 +68,48 @@ post.jags %>>% purrr::map_df(function(x){
 
 post.jags.df$beta1[[1]]
 
-post.jags.df %>>% 
-    {map2((.)$beta1, (.)$beta2, function(beta1, beta2){
-        stat_function(mapping = aes(x), data = data_frame(x = c(3, 7)), geom = "line", fun = function(x, beta1, beta2){
-            exp(beta1 + beta2 * x)
-        }, args = list(beta1 = beta1, beta2 = beta2), alpha = 0.5)
-    })} -> lambdas
-
 options(repr.plot.width = 4, repr.plot.height = 4)
-
-lambdas[[1]] 
-
-lambdas[[2]] 
 
 post.jags.df %>>% head(10)
 
-post.jags.df %>>% ggplot(aes(x = beta1, y = beta2)) + geom_point(alpha = 0.5)
+summary(post.jags)
 
-exp(2.133491 + 0.05784056* c(3:7))
+summary(post.jags) %>>% str()
 
-exp(1.5 + 0.1 * c(3:7))
+summary(post.jags)$quantiles["beta1", "50%"]
+
+summary(post.jags)$quantiles["beta2", "50%"]
 
 options(expressions = 50000)
 
-ggplot() + 
-    lambdas + 
-#     scale_y_continuous(breaks = seq(4, 12, 2), limits = c(3, 12)) + 
-    theme_bw() + theme(panel.grid = element_blank())
+post.jags.df %>>% 
+    {map2((.)$beta1, (.)$beta2, function(beta1, beta2){
+        stat_function(mapping = aes(x), 
+                      data = data_frame(x = c(3, 7)), 
+                      geom = "line", 
+                      fun = function(x, beta1, beta2){
+                          exp(beta1 + beta2 * (x - mean(d$x)))}, 
+                      args = list(beta1 = beta1, beta2 = beta2), 
+                      colour = gray(0.8, 0.1))
+    })} -> lambdas
 
-summary(post.jags)
+ggplot() + 
+    lambdas +
+    theme_bw() + theme(panel.grid = element_blank()) + 
+    geom_point(data = d, mapping = aes(x = x, y = y)) + 
+    stat_function(data = data_frame(x = c(3, 7)), 
+                         mapping = aes(x), 
+                         geom = "line", 
+                         fun = function(x){
+                             exp(summary(post.jags)$quantiles["beta1", "50%"] + 
+                                 summary(post.jags)$quantiles["beta2", "50%"] * (x - mean(d$x)))}, 
+                         colour = "black") + 
+    scale_y_continuous(breaks = seq(4, 12, 2), limits = c(3, 12))
+
+post.jags.df %>>% 
+    ggplot(aes(x = beta1, y = beta2)) + 
+        geom_point(colour = gray(0.5)) + 
+        theme_bw() + theme(panel.grid = element_blank())
 
 coda::gelman.diag(post.jags)
 
