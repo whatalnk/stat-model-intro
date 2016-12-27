@@ -1,0 +1,14 @@
+model
+{
+	for (i in 1:N) {
+		Y[i] ~ dbin(q[i], 8) # binomial distribution
+		logit(q[i]) <- beta + r[i] # probability of living
+	}
+	beta ~ dnorm(0, 1.0E-4) # non-informative prior distribution
+	for (i in 1:N) {
+		r[i] ~ dnorm(0, tau) # hierarchical prior distribution
+	}
+	tau <- 1 / (s * s)	 # tau is inverse of variance
+	s ~ dunif(0, 1.0E+4) # non-informative prior distribution
+}
+
