@@ -1,0 +1,18 @@
+model
+{
+  for (j in 1:N.site) {
+    Y[j] ~ dpois(mean[j]) # ポアソン分布
+    log(mean[j]) <- beta + r[j] # （切片） + （場所差）
+  }
+  # 場所差 r[j] をCAR model で生成
+  # car.normal()
+  ## Adj[]: 隣接する場所の番号
+  ## Weights[]: Adj[] に対応する重み
+  ## Num[]: 隣接数 n_j
+  ## tau: 分散の逆数
+  r[1:N.site] ~ car.normal(Adj[], Weights[], Num[], tau)
+  beta ~ dnorm(0, 1.0E-4)
+  tau <- 1 / (s * s) # tau は分散の逆数
+  s ~ dunif(0, 1.0E+4)
+}
+
