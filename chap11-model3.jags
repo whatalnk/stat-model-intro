@@ -1,0 +1,13 @@
+model
+{
+  for (j in 1:3) {
+    for (i in 1:N.site) {
+      Y[i, j] ~ dpois(lambda[i, j])
+      lambda[i, j] <- exp(r[i, j])
+    }
+    for (i in 2:N.site){
+      r[i, j] ~ dnorm(r[i - 1, j], Tau[j])
+    }
+    r[1, j] ~ dunif(0, 10)
+  }
+}
