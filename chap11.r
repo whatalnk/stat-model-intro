@@ -14,7 +14,7 @@ data_frame(j = seq_along(Y), y = Y) %>>%
     geom_point(shape = 21)+ 
     theme_bw() +
     theme(panel.grid = element_blank()) + 
-    xlab(expression("Position "*italic("y"))) + 
+    xlab(expression("Position "*italic("j"))) + 
     ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
     ylim(c(0, 25))
 
@@ -24,109 +24,207 @@ var(Y)
 
 readLines("chap11-model.jags", encoding = "UTF-8") %>>% cat(sep = "\n")
 
+readLines("chap11-model2.jags", encoding = "UTF-8") %>>% cat(sep = "\n")
+
 library(rjags)
 
-data.list <- list(
+data.list2 <- list(
     N.site = length(Y), 
-    Y = Y, 
-    Adj = c(2, 2:(length(Y)-1), length(Y)-1) %>>% 
-            purrr::map_at(c(2:49), function(x){c(x - 1, x + 1)}) %>>% 
-            purrr::flatten() %>>% purrr::flatten_dbl(), 
-    Weights = rep(1, 2 * length(Y) - 2), 
-    Num = c(1, rep(2, length(Y) - 2), 1)
+    Y = Y
 )
 
-data.list
+data.list2
 
-inits.list <- list(
-    beta = 0, 
-    r = rnorm(length(Y), 0, 0.1), 
-    s = 1
+m2 <- jags.model(
+    file = "chap11-model2.jags", 
+    data = data.list,
+    n.chain = 3, 
+    n.adapt = 100
 )
 
-inits.list
+post.jags2 <- coda.samples(m, variable.names = c("r", "s"), n.iter = 10000, thin = 10)
 
-c(sapply(2:(50 - 1), function(a) c(a - 1, a + 1))) %>>% 
-    {c(NA, 2, (.), 49, NA)} %>>%
-    {matrix(data = (.), ncol = 2, byrow = TRUE)} %>>% 
-    data.frame() %>>% 
-    mutate(j = c(1:50)) %>>% 
-    rename(r1 = X1, r2 = X2) %>>% 
-    select(j, r1, r2) %>>% head()
+saveRDS(post.jags2, file = "chap11-post-jags2.rds")
 
-m <- jags.model(
-    file = "chap11-model.jags", 
-    data = data.list, 
-    inits = list(inits.list, inits.list, inits.list), 
-    n.chain = 3
+post.jags2 <- readRDS(file = "chap11-post-jags2.rds")
+
+summary(post.jags2)
+
+gelman.diag(post.jags2)
+
+varnames(post.jags2)
+
+Y.hat <- exp(summary(post.jags2[, grep("r", varnames(post.jags2))])$statistics[, "Mean"])
+Y.qnt <- exp(summary(post.jags2[, grep("r", varnames(post.jags2))])$quantiles[, c("2.5%", "97.5%")])
+
+data_frame(site = seq_along(Y), 
+           Y = Y,
+           Y.hat = Y.hat,
+           Y.975 = Y.qnt[, 2],
+           Y.025 = Y.qnt[, 1]) %>>% 
+    ggplot() +
+        geom_point(aes(x = site, y = Y)) +
+        geom_line(aes(x = site, y = Y.hat)) +
+        geom_ribbon(aes(x = site, ymin = Y.025, ymax = Y.975), alpha = 0.3) + 
+        theme_bw() + 
+        theme(
+            panel.grid = element_blank()
+        ) + 
+        xlab(expression("Position "*italic("j"))) + 
+        ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
+        ylim(c(0, 25))
+
+data.list3 <- list(
+    N.site = length(Y), 
+    Y = matrix(c(Y, Y, Y), length(Y), 3), 
+    Tau = c(1000, 20, 0.01)
 )
 
-library(CARBayes)
+m3 <- jags.model(
+    file = "chap11-model3.jags", 
+    data = data.list3,
+    n.chain = 3, 
+    n.adapt = 100
+)
 
-load("Y.RData")
+post.jags3 <- coda.samples(m3, variable.names = c("r"), n.iter = 200, thin = 1)
 
-ls.str()
+saveRDS(post.jags3, file = "chap11-post-jags3.rds")
 
-options(repr.plot.width = 4, repr.plot.height = 4)
+post.jags3 <- readRDS("chap11-post-jags3.rds")
 
-plot(Y)
+summary(post.jags3)
 
-n <- length(Y)
-W <- matrix(0, nrow = n, ncol = n)
+str(post.jags3)
 
-for (i in 2:n) {
-    W[i, i - 1] <- W[i - 1, i] <- 1
-}
+post.jags3 %>>% purrr::map_df(function(x){as_data_frame(x)}) %>>% dplyr::sample_n(3) %>>% 
+    select(ends_with("1]")) %>>% t() %>>% as_data_frame() %>>% 
+    purrr::dmap(function(x){exp(x)}) %>>% 
+    mutate(site = seq_along(Y), Y = Y) %>>% 
+    ggplot() + 
+        geom_point(aes(x = site, y = Y)) + 
+        geom_line(aes(x = site, y = V1), colour = gray(0.6)) + 
+        geom_line(aes(x = site, y = V2), colour = gray(0.65)) + 
+        geom_line(aes(x = site, y = V3), colour = gray(0.7)) + 
+        theme_bw() + theme(panel.grid = element_blank()) + 
+        xlab(expression("Position "*italic("j"))) + 
+        ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
+        ylim(c(0, 25))
 
-fit <- S.CARleroux(Y ~ 1, family = "poisson", W = W, burnin = 2000, n.sample = 32000, thin = 10, 
-                   fix.rho = TRUE, rho = 1)
+post.jags3 %>>% purrr::map_df(function(x){as_data_frame(x)}) %>>% dplyr::sample_n(3) %>>% 
+    select(ends_with("2]")) %>>% t() %>>% as_data_frame() %>>% 
+    purrr::dmap(function(x){exp(x)}) %>>% 
+    mutate(site = seq_along(Y), Y = Y) %>>% 
+    ggplot() + 
+        geom_point(aes(x = site, y = Y)) + 
+        geom_line(aes(x = site, y = V1), colour = gray(0.6)) + 
+        geom_line(aes(x = site, y = V2), colour = gray(0.65)) + 
+        geom_line(aes(x = site, y = V3), colour = gray(0.7)) + 
+        theme_bw() + theme(panel.grid = element_blank()) + 
+        xlab(expression("Position "*italic("j"))) + 
+        ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
+        ylim(c(0, 25))
 
-print(fit)
+post.jags3 %>>% purrr::map_df(function(x){as_data_frame(x)}) %>>% dplyr::sample_n(3) %>>% 
+    select(ends_with("3]")) %>>% t() %>>% as_data_frame() %>>% 
+    purrr::dmap(function(x){exp(x)}) %>>% 
+    mutate(site = seq_along(Y), Y = Y) %>>% 
+    ggplot() + 
+        geom_point(aes(x = site, y = Y)) + 
+        geom_line(aes(x = site, y = V1), colour = gray(0.6)) + 
+        geom_line(aes(x = site, y = V2), colour = gray(0.65)) + 
+        geom_line(aes(x = site, y = V3), colour = gray(0.7)) + 
+        theme_bw() + theme(panel.grid = element_blank()) + 
+        xlab(expression("Position "*italic("j"))) + 
+        ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
+        ylim(c(0, 25))
 
-summarise.samples(fit$samples$beta, quantiles = c(0.025, 0.5, 0.975))
+Idx.obs <- c(1:50)[-c(6, 9, 12, 13, 26:30)]
+Y.obs <- Y[Idx.obs]
+data.list4 <- list(
+    N.site = length(Y), 
+    Idx.obs = Idx.obs, 
+    Y.obs = Y.obs, 
+    N.obs = length(Y.obs)
+)
 
-summarise.samples(fit$samples$phi, quantiles = c(0.025, 0.5, 0.975))
+m4 <- jags.model(
+    file = "chap11-model4.jags", 
+    data = data.list4,
+    n.chain = 3, 
+    n.adapt = 100
+)
 
-library(coda)
+post.jags4 <- coda.samples(
+    m2, 
+    c("r", "s"), 
+    n.iter = 10000, 
+    thin = 10
+)
 
-options(repr.plot.width = 8, repr.plot.height = 4)
+(function(){
+    Y.hat <- exp(summary(post.jags4[, grep("r", varnames(post.jags4))])$statistics[, "Mean"])
+    Y.qnt <- exp(summary(post.jags4[, grep("r", varnames(post.jags4))])$quantiles[, c("2.5%", "97.5%")])
+    p.fill <- rep("black", 50)
+    p.fill[Idx.obs] <- "white"
+    data_frame(site = seq_along(Y), 
+           Y = Y,
+           Y.hat = Y.hat,
+           Y.975 = Y.qnt[, 2],
+           Y.025 = Y.qnt[, 1]) %>>% 
+    ggplot() +
+        geom_point(aes(x = site, y = Y), shape = 21, fill = p.fill) +
+        geom_line(aes(x = site, y = Y.hat)) +
+        geom_ribbon(aes(x = site, ymin = Y.025, ymax = Y.975), alpha = 0.3) + 
+        theme_bw() + 
+        theme(
+            panel.grid = element_blank()
+        ) + 
+        xlab(expression("Position "*italic("j"))) + 
+        ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
+        scale_y_continuous(breaks = seq(0, 25, 5), limits = c(0, 27))
+})()
 
-geweke.diag(fit$samples$beta)
-geweke.diag(fit$samples$phi)
+m5 <- jags.model(
+    file = "chap11-model5.jags", 
+    data = data.list4,
+    n.chain = 3, 
+    n.adapt = 100
+)
 
-plot(fit$samples$beta, las = 1)
-plot(fit$samples$phi[,49], las = 1)
+post.jags5 <- coda.samples(
+    m5, 
+    c("r", "beta", "s"), 
+    n.iter = 10000,
+    thin = 10
+)
 
+gelman.diag(post.jags5)
 
-sapply(c("ggplot2", "Cairo"), require, character.only = TRUE)
+summary(post.jags5)
 
-options(repr.plot.width = 4, repr.plot.height = 4)
+(function(){
+    beta <- summary(post.jags5[, "beta"])$statistics[["Mean"]]
+    Y.hat <- exp(beta + summary(post.jags5[, grep("r", varnames(post.jags5))])$statistics[, "Mean"])
+    Y.qnt <- exp(beta + summary(post.jags5[, grep("r", varnames(post.jags5))])$quantiles[, c("2.5%", "97.5%")])
+    p.fill <- rep("black", 50)
+    p.fill[Idx.obs] <- "white"
+    data_frame(site = seq_along(Y), 
+           Y = Y,
+           Y.hat = Y.hat,
+           Y.975 = Y.qnt[, 2],
+           Y.025 = Y.qnt[, 1]) %>>% 
+    ggplot() +
+        geom_point(aes(x = site, y = Y), shape = 21, fill = p.fill) +
+        geom_line(aes(x = site, y = Y.hat)) +
+        geom_ribbon(aes(x = site, ymin = Y.025, ymax = Y.975), alpha = 0.3) + 
+        theme_bw() + 
+        theme(
+            panel.grid = element_blank()
+        ) + 
+        xlab(expression("Position "*italic("j"))) + 
+        ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
+        scale_y_continuous(breaks = seq(0, 25, 5), limits = c(0, 28))
+})()
 
-seq_along(c(1,10, 20))
-
-point.alpha <- 0.5
-ribbon.alpha <- 0.3
-ribbon.fill <- "black"
-Y.fit <- apply(fit$samples$fitted, 2, mean) #3000回の平均
-Y.ci <- apply(fit$samples$fitted, 2, quantile, c(0.025, 0.975))
-
-df <- data.frame(j = seq_along(Y), Y = Y, Yhat = Y.fit,
-                  Yupper = Y.ci["97.5%", ], Ylower = Y.ci["2.5%", ])
-p <- ggplot(df) +
-  geom_ribbon(aes(x = j, ymax = Yupper, ymin = Ylower),
-              fill = ribbon.fill, alpha = ribbon.alpha) +
-  geom_point(aes(x = j, y = Y), size = 2.5) +
-  geom_line(aes(x = j, y = Yhat), size = 0.5) +
-  xlab("位置") + ylab("個体数") +
-  ylim(0, 25) +
-  theme_classic(base_family = "IPAexGothic")
-
-Cairo(type = "raster")
-print(p)
-dev.off()
-
-str(fit$samples$fitted)
-
-head(fit$samples$fitted, 5)
-
-print(readLines("runbugs.R"))
+devtools::session_info()
