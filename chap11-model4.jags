@@ -1,0 +1,13 @@
+model
+{
+  for (j in 1:N.obs){
+    Y.obs[j] ~ dpois(lambda[j])
+    lambda[j] <- exp(r[Idx.obs[j]])
+  }
+  for(j in 2:N.site){
+    r[j] ~ dnorm(r[j - 1], tau)
+  }
+  r[1] ~ dunif(0, 10)
+  tau <- 1 / (s * s)
+  s ~ dunif(0, 1.0E+4)
+}
