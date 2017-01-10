@@ -1,3 +1,4 @@
+# CAR, car.normal() in WinBUGS
 model
 {
   for (j in 1:N.site) {

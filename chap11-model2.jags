@@ -1,3 +1,4 @@
+# CAR, JAGS
 model 
 {
   for (j in 1:N.site){

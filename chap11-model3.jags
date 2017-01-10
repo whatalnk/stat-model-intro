@@ -1,3 +1,4 @@
+# CAR, various s, JAGS
 model
 {
   for (j in 1:3) {
