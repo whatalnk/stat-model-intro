@@ -7,10 +7,10 @@ title: stat-model-intro
 * [著者サポートページ](http://hosho.ees.hokudai.ac.jp/~kubo/ce/IwanamiBook.html)
 
 ## 目次
-* [2章](whatalnk.github.io/stat-model-intro/Chap02)
-* [5章](whatalnk.github.io/stat-model-intro/Chap05)
-* [8章](whatalnk.github.io/stat-model-intro/Chap08)
-* [11章](whatalnk.github.io/stat-model-intro/Chap11)
+* [2章](http://whatalnk.github.io/stat-model-intro/Chap02)
+* [5章](http://whatalnk.github.io/stat-model-intro/Chap05)
+* [8章](http://whatalnk.github.io/stat-model-intro/Chap08)
+* [11章](http://whatalnk.github.io/stat-model-intro/Chap11)
 
 
 ## その他
