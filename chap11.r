@@ -40,7 +40,7 @@ m <- jags.model(
 
 post.jags <- coda.samples(m, variable.names = c("r", "s", "beta"), n.iter = 10000, thin = 10)
 
-saveRDS(post.jags, file = "chap11-post-jags.rds")
+# saveRDS(post.jags, file = "chap11-post-jags.rds")
 
 post.jags <- readRDS("chap11-post-jags.rds")
 
@@ -90,7 +90,7 @@ m2 <- jags.model(
 
 post.jags2 <- coda.samples(m2, variable.names = c("r", "s"), n.iter = 10000, thin = 10)
 
-saveRDS(post.jags2, file = "chap11-post-jags2.rds")
+# saveRDS(post.jags2, file = "chap11-post-jags2.rds")
 
 post.jags2 <- readRDS(file = "chap11-post-jags2.rds")
 
@@ -145,7 +145,7 @@ m3 <- jags.model(
 
 post.jags3 <- coda.samples(m3, variable.names = c("r"), n.iter = 200, thin = 1)
 
-saveRDS(post.jags3, file = "chap11-post-jags3.rds")
+# saveRDS(post.jags3, file = "chap11-post-jags3.rds")
 
 post.jags3 <- readRDS("chap11-post-jags3.rds")
 
@@ -197,6 +197,8 @@ post.jags3 %>>% purrr::map_df(function(x){as_data_frame(x)}) %>>% dplyr::sample_
         ylab(expression("Number of individuals  "*italic("y")[italic("j")])) + 
         ylim(c(0, 25))
 
+readLines("chap11-model4.jags") %>>% cat(sep = "\n")
+
 data.list4 <- (function(){
     Idx.obs <- c(1:50)[-c(6, 9, 12, 13, 26:30)]
     Y.obs <- Y[Idx.obs]
@@ -223,7 +225,7 @@ post.jags4 <- coda.samples(
     thin = 10
 )
 
-saveRDS(post.jags4, file = "chap11-post-jags4.rds")
+# saveRDS(post.jags4, file = "chap11-post-jags4.rds")
 
 post.jags4 <- readRDS("chap11-post-jags4.rds")
 
@@ -292,7 +294,7 @@ post.jags5 <- coda.samples(
     thin = 10
 )
 
-saveRDS(post.jags5, file = "chap11-post-jags5.rds")
+# saveRDS(post.jags5, file = "chap11-post-jags5.rds")
 
 post.jags5 <- readRDS("chap11-post-jags5.rds")
 
